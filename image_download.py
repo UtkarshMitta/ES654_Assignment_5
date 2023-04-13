@@ -12,7 +12,7 @@ def download_images():
     response = requests.get(search_url, headers=user_agent)
     html = response.text
     soup = BeautifulSoup(html, 'html.parser')
-    results = soup.findAll('img', {'class': 'rg_i Q4LuWd'})
+    results = soup.findAll('img',{'class': 'rg_i Q4LuWd'})
     count = 1
     links = []
     for result in results:
