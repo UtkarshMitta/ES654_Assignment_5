@@ -54,16 +54,17 @@ def summarize_diagnostics(history):
     pyplot.close()
 
 
-def run_test_harness(blocks):
+def run_test_harness(blocks,data_aug):
     model = define_model(blocks)
-    datagen = ImageDataGenerator(rescale=1.0 / 255.0)
-    train_it = datagen.flow_from_directory(
+    train_datagen = ImageDataGenerator(rescale=1.0 / 255.0,width_shift_range=0.1,height_shift_range=0.1,horizontal_flip=True) if data_aug else ImageDataGenerator(rescale=1.0 / 255.0)
+    test_datagen = ImageDataGenerator(rescale=1.0 / 255.0)
+    train_it = train_datagen.flow_from_directory(
         "dataset_upma_vs_halwa/train/",
         class_mode="binary",
         batch_size=64,
         target_size=(200, 200),
     )
-    test_it = datagen.flow_from_directory(
+    test_it = test_datagen.flow_from_directory(
         "dataset_upma_vs_halwa/test/",
         class_mode="binary",
         batch_size=64,
@@ -82,5 +83,5 @@ def run_test_harness(blocks):
     summarize_diagnostics(history)
 
 
-blocks = int(input("Enter the number of blocks: "))
-run_test_harness(blocks)
+blocks,data_aug = int(input("Enter the number of blocks: ")),int(input("For data augmentation enter 1, else 0: "))
+run_test_harness(blocks,data_aug)
