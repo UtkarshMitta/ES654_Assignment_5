@@ -6,6 +6,7 @@ from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
 from keras.optimizers import SGD
 from keras.preprocessing.image import ImageDataGenerator
 from time import time
+from keras.callbacks import TensorBoard
 
 
 def define_model(blocks):
@@ -81,13 +82,15 @@ def run_test_harness(blocks, data_aug):
         target_size=(200, 200),
     )
     start = time()
+    tensorboard_callback = TensorBoard(log_dir="tb_callback_dir", histogram_freq=1)
     history = model.fit(
         train_it,
         steps_per_epoch=len(train_it),
         validation_data=test_it,
         validation_steps=len(test_it),
+        callbacks=[tensorboard_callback],
         epochs=20,
-        verbose=0,
+        verbose=2,
     )
     end = time()
     train_loss, train_acc = model.evaluate(train_it, steps=len(train_it), verbose=0)
@@ -97,7 +100,7 @@ def run_test_harness(blocks, data_aug):
         ", Test loss: %.3f" % test_loss,
         ", Training time(in s): %.3f" % (end - start),
         ", Train accuracy: %.3f" % (train_acc * 100),
-        ", Test accuracy: %.3f" % (test_acc * 100)
+        ", Test accuracy: %.3f" % (test_acc * 100),
     )
     print(model.summary())
     summarize_diagnostics(history)

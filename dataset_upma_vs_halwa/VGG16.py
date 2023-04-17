@@ -10,6 +10,7 @@ from keras.optimizers import SGD
 from keras.layers import Conv2D, Dense
 from keras.preprocessing.image import ImageDataGenerator
 from time import time
+from keras.callbacks import TensorBoard
 
 # define cnn model
 def define_model():
@@ -70,13 +71,15 @@ def run_test_harness():
         target_size=(224, 224),
     )
     # fit model
+    tensorboard_callback = TensorBoard(log_dir="tb_callback_dir", histogram_freq=1)
     start = time()
     history = model.fit(
         train_it,
         steps_per_epoch=len(train_it),
         validation_data=test_it,
         validation_steps=len(test_it),
-        epochs=20,
+        epochs=10,
+        callbacks=[tensorboard_callback],
         verbose=1,
     )
     end = time()
