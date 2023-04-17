@@ -83,25 +83,16 @@ def run_test_harness():
     # evaluate model
     train_loss, train_acc = model.evaluate(train_it, steps=len(train_it), verbose=0)
     test_loss, test_acc = model.evaluate(test_it, steps=len(test_it), verbose=0)
-    total_params = 0
-    for layer in model.layers:
-        if isinstance(layer, Conv2D):
-            param_number = layer.filters * (layer.input_shape[-1] * layer.kernel_size[0] * layer.kernel_size[1] + 1)
-            total_params += param_number
-        elif isinstance(layer, Dense):
-            param_number = layer.units * (layer.input_shape[-1] + 1)
-            total_params += param_number
 
     print(
         "Training Loss: %.3f" % train_loss,
         ", Test loss: %.3f" % test_loss,
         ", Training time(in s): %.3f" % (end - start),
         ", Train accuracy: %.3f" % (train_acc * 100),
-        ", Test accuracy: %.3f" % (test_acc * 100),
-        ", Total params: ",
-        total_params,
+        ", Test accuracy: %.3f" % (test_acc * 100)
     )
     # learning curves
+    model.summary()
     summarize_diagnostics(history)
 
 
