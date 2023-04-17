@@ -1,85 +1,75 @@
+# vgg16 model used for transfer learning on the upma and halwa dataset
 import sys
 from matplotlib import pyplot
 from keras.utils import to_categorical
-from keras.models import Sequential
-from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from keras.applications.vgg16 import VGG16
+from keras.models import Model
+from keras.layers import Dense
+from keras.layers import Flatten
 from keras.optimizers import SGD
+from keras.layers import Conv2D, Dense
 from keras.preprocessing.image import ImageDataGenerator
 from time import time
 
-
-def define_model(blocks):
-    assert blocks > 0
-    model = Sequential()
-    model.add(
-        Conv2D(
-            32,
-            (3, 3),
-            activation="relu",
-            kernel_initializer="he_uniform",
-            padding="same",
-            input_shape=(200, 200, 3),
-        )
-    )
-    model.add(MaxPooling2D((2, 2)))
-    for i in range(blocks - 1):
-        model.add(
-            Conv2D(
-                2 ** (6 + i),
-                (3, 3),
-                activation="relu",
-                kernel_initializer="he_uniform",
-                padding="same",
-            )
-        )
-        model.add(MaxPooling2D((2, 2)))
-    model.add(Flatten())
-    model.add(Dense(128, activation="relu", kernel_initializer="he_uniform"))
-    model.add(Dense(1, activation="sigmoid"))
+# define cnn model
+def define_model():
+    # load model
+    model = VGG16(include_top=False, input_shape=(224, 224, 3))
+    # mark loaded layers as not trainable
+    for layer in model.layers:
+        layer.trainable = False
+    # add new classifier layers
+    flat1 = Flatten()(model.layers[-1].output)
+    class1 = Dense(128, activation="relu", kernel_initializer="he_uniform")(flat1)
+    output = Dense(1, activation="sigmoid")(class1)
+    # define new model
+    model = Model(inputs=model.inputs, outputs=output)
+    # compile model
     opt = SGD(learning_rate=0.001, momentum=0.9)
     model.compile(optimizer=opt, loss="binary_crossentropy", metrics=["accuracy"])
     return model
 
 
+# plot diagnostic learning curves
 def summarize_diagnostics(history):
+    # plot loss
     pyplot.subplot(211)
     pyplot.title("Cross Entropy Loss")
     pyplot.plot(history.history["loss"], color="blue", label="train")
     pyplot.plot(history.history["val_loss"], color="orange", label="test")
+    # plot accuracy
     pyplot.subplot(212)
     pyplot.title("Classification Accuracy")
     pyplot.plot(history.history["accuracy"], color="blue", label="train")
     pyplot.plot(history.history["val_accuracy"], color="orange", label="test")
+    # save plot to file
     filename = sys.argv[0].split("/")[-1]
     pyplot.savefig(filename + "_plot.png")
     pyplot.close()
 
 
-def run_test_harness(blocks, data_aug):
-    model = define_model(blocks)
-    train_datagen = (
-        ImageDataGenerator(
-            rescale=1.0 / 255.0,
-            width_shift_range=0.1,
-            height_shift_range=0.1,
-            horizontal_flip=True,
-        )
-        if data_aug
-        else ImageDataGenerator(rescale=1.0 / 255.0)
-    )
-    test_datagen = ImageDataGenerator(rescale=1.0 / 255.0)
-    train_it = train_datagen.flow_from_directory(
+# run the test harness for evaluating a model
+def run_test_harness():
+    # define model
+    model = define_model()
+    # create data generator
+    datagen = ImageDataGenerator(featurewise_center=True)
+    # specify imagenet mean values for centering
+    datagen.mean = [123.68, 116.779, 103.939]
+    # prepare iterator
+    train_it = datagen.flow_from_directory(
         "dataset_upma_vs_halwa/train/",
         class_mode="binary",
         batch_size=64,
-        target_size=(200, 200),
+        target_size=(224, 224),
     )
-    test_it = test_datagen.flow_from_directory(
+    test_it = datagen.flow_from_directory(
         "dataset_upma_vs_halwa/test/",
         class_mode="binary",
         batch_size=64,
-        target_size=(200, 200),
+        target_size=(224, 224),
     )
+    # fit model
     start = time()
     history = model.fit(
         train_it,
@@ -87,17 +77,21 @@ def run_test_harness(blocks, data_aug):
         validation_data=test_it,
         validation_steps=len(test_it),
         epochs=20,
-        verbose=0,
+        verbose=1,
     )
     end = time()
+    # evaluate model
     train_loss, train_acc = model.evaluate(train_it, steps=len(train_it), verbose=0)
     test_loss, test_acc = model.evaluate(test_it, steps=len(test_it), verbose=0)
-    param_number = 0
+    total_params = 0
     for layer in model.layers:
         if isinstance(layer, Conv2D):
-            param_number += layer.filters * (
-                layer.input_shape[-1] * layer.kernel_size[0] * layer.kernel_size[1] + 1
-            )
+            param_number = layer.filters * (layer.input_shape[-1] * layer.kernel_size[0] * layer.kernel_size[1] + 1)
+            total_params += param_number
+        elif isinstance(layer, Dense):
+            param_number = layer.units * (layer.input_shape[-1] + 1)
+            total_params += param_number
+
     print(
         "Training Loss: %.3f" % train_loss,
         ", Test loss: %.3f" % test_loss,
@@ -105,12 +99,11 @@ def run_test_harness(blocks, data_aug):
         ", Train accuracy: %.3f" % (train_acc * 100),
         ", Test accuracy: %.3f" % (test_acc * 100),
         ", Total params: ",
-        param_number,
+        total_params,
     )
+    # learning curves
     summarize_diagnostics(history)
 
 
-blocks, data_aug = int(input("Enter the number of blocks: ")), int(
-    input("For data augmentation enter 1, else 0: ")
-)
-run_test_harness(blocks, data_aug)
+# entry point, run the test harness
+run_test_harness()
