@@ -101,8 +101,8 @@ def run_test_harness(blocks, data_aug):
         ", Training time(in s): %.3f" % (end - start),
         ", Train accuracy: %.3f" % (train_acc * 100),
         ", Test accuracy: %.3f" % (test_acc * 100),
+        ", Total params: ",model.count_params()
     )
-    print(model.summary())
     summarize_diagnostics(history)
 
 
