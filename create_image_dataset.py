@@ -1,10 +1,10 @@
 # plot dog photos from the dogs vs cats dataset
 from matplotlib import pyplot
 from matplotlib.image import imread
-from os import listdir,makedirs
-from numpy import asarray,save,load
+from os import listdir, makedirs
+from numpy import asarray, save, load
 from random import seed, random
-from tensorflow.keras.utils import load_img,img_to_array
+from keras.utils import load_img, img_to_array
 from shutil import copyfile
 
 # define location of dataset
@@ -47,15 +47,15 @@ print(photos.shape, labels.shape)
 save("upma_vs_halwa_photos.npy", photos)
 save("upma_vs_halwa_labels.npy", labels)
 
-photos = load('upma_vs_halwa_photos.npy')
-labels = load('upma_vs_halwa_labels.npy')
+photos = load("upma_vs_halwa_photos.npy")
+labels = load("upma_vs_halwa_labels.npy")
 print(photos.shape, labels.shape)
 
-dataset_home = 'dataset_upma_vs_halwa/'
-subdirs = ['train/', 'test/']
+dataset_home = "dataset_upma_vs_halwa/"
+subdirs = ["train/", "test/"]
 for subdir in subdirs:
- # create label subdirectories
-    labeldirs = ['upma/', 'halwa/']
+    # create label subdirectories
+    labeldirs = ["upma/", "halwa/"]
     for labldir in labeldirs:
         newdir = dataset_home + subdir + labldir
         makedirs(newdir, exist_ok=True)
@@ -63,16 +63,16 @@ seed(1)
 # define ratio of pictures to use for validation
 val_ratio = 0.2
 # copy training dataset images into subdirectories
-for food in ['upma/','halwa/']:
-    src_directory = 'images/'+food
+for food in ["upma/", "halwa/"]:
+    src_directory = "images/" + food
     for file in listdir(src_directory):
         src = src_directory + file
-        dst_dir = 'train/'
+        dst_dir = "train/"
         if random() < val_ratio:
-            dst_dir = 'test/'
-        if food=='upma/':
-            dst = dataset_home + dst_dir + 'upma/'  + file
+            dst_dir = "test/"
+        if food == "upma/":
+            dst = dataset_home + dst_dir + "upma/" + file
             copyfile(src, dst)
-        elif food=='halwa/':
-            dst = dataset_home + dst_dir + 'halwa/'  + file
+        elif food == "halwa/":
+            dst = dataset_home + dst_dir + "halwa/" + file
             copyfile(src, dst)

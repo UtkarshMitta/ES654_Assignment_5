@@ -69,7 +69,16 @@ def run_test_harness(blocks, data_aug):
         if data_aug
         else ImageDataGenerator(rescale=1.0 / 255.0)
     )
-    test_datagen = ImageDataGenerator(rescale=1.0 / 255.0)
+    test_datagen = (
+        ImageDataGenerator(
+            rescale=1.0 / 255.0,
+            width_shift_range=0.1,
+            height_shift_range=0.1,
+            horizontal_flip=True,
+        )
+        if data_aug
+        else ImageDataGenerator(rescale=1.0 / 255.0)
+    )
     train_it = train_datagen.flow_from_directory(
         "dataset_upma_vs_halwa/train/",
         class_mode="binary",
@@ -82,7 +91,7 @@ def run_test_harness(blocks, data_aug):
         batch_size=64,
         target_size=(200, 200),
     )
-    dir="tb_callbacks/VGG"+str(blocks)+"_data_augmentation_"+str(data_aug)
+    dir = "tb_callbacks/VGG" + str(blocks) + "_data_augmentation_" + str(data_aug)
     tensorboard_callback = TensorBoard(log_dir=dir, histogram_freq=1)
     start = time()
     history = model.fit(
@@ -95,6 +104,29 @@ def run_test_harness(blocks, data_aug):
         verbose=2,
     )
     end = time()
+    test_predictions = model.predict(test_it)
+
+    # Set up TensorBoard file writer
+    logdir = (
+        "tb_callbacks/images/VGG" + str(blocks) + "_data_augmentation_" + str(data_aug)
+    )
+    file_writer = summary.create_file_writer(logdir)
+
+    # Number of images to log
+    num_images_to_log = len(test_it)
+
+    with file_writer.as_default():
+        for i in range(num_images_to_log):
+            # Get image and corresponding prediction
+            image = test_it[i][0]
+            prediction = test_predictions[i]
+
+            # Add image to TensorBoard
+            summary.image(f"Image {i}", image, step=0)
+
+            # Add prediction text to TensorBoard
+            prediction_text = f"Prediction: {prediction}"
+            summary.text(f"Prediction {i}", prediction_text, step=0)
     train_loss, train_acc = model.evaluate(train_it, steps=len(train_it), verbose=0)
     test_loss, test_acc = model.evaluate(test_it, steps=len(test_it), verbose=0)
     print(
@@ -103,9 +135,11 @@ def run_test_harness(blocks, data_aug):
         ", Training time(in s): %.3f" % (end - start),
         ", Train accuracy: %.3f" % (train_acc * 100),
         ", Test accuracy: %.3f" % (test_acc * 100),
-        ", Total params: ",model.count_params()
+        ", Total params: ",
+        model.count_params(),
     )
     summarize_diagnostics(history)
 
-for mod in ((1,False),(2,False),(3,True)):
-    run_test_harness(mod[0],mod[1])
+
+for mod in ((1, False), (2, False), (3, True)):
+    run_test_harness(mod[0], mod[1])

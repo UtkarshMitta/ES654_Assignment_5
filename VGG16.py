@@ -7,10 +7,12 @@ from keras.models import Model
 from keras.layers import Dense
 from keras.layers import Flatten
 from keras.optimizers import SGD
-from keras.layers import Conv2D, Dense
+from keras.layers import Dense
 from keras.preprocessing.image import ImageDataGenerator
 from time import time
 from keras.callbacks import TensorBoard
+from tensorboard import summary
+
 
 # define cnn model
 def define_model():
@@ -71,7 +73,7 @@ def run_test_harness():
         target_size=(224, 224),
     )
     # fit model
-    dir="tb_callbacks/VGG16_transfer_learning"
+    dir = "tb_callbacks/VGG16_transfer_learning"
     tensorboard_callback = TensorBoard(log_dir=dir, histogram_freq=1)
     start = time()
     history = model.fit(
@@ -84,6 +86,25 @@ def run_test_harness():
         verbose=1,
     )
     end = time()
+    test_predictions = model.predict(test_it)
+    logdir = "tb_callbacks/images/VGG16_transfer_learning"
+    file_writer = summary.create_file_writer(logdir)
+
+    # Number of images to log
+    num_images_to_log = len(test_it)
+
+    with file_writer.as_default():
+        for i in range(num_images_to_log):
+            # Get image and corresponding prediction
+            image = test_it[i][0]
+            prediction = test_predictions[i]
+
+            # Add image to TensorBoard
+            summary.image(f"Image {i}", image, step=0)
+
+            # Add prediction text to TensorBoard
+            prediction_text = f"Prediction: {prediction}"
+            summary.text(f"Prediction {i}", prediction_text, step=0)
     # evaluate model
     train_loss, train_acc = model.evaluate(train_it, steps=len(train_it), verbose=0)
     test_loss, test_acc = model.evaluate(test_it, steps=len(test_it), verbose=0)
@@ -94,7 +115,8 @@ def run_test_harness():
         ", Training time(in s): %.3f" % (end - start),
         ", Train accuracy: %.3f" % (train_acc * 100),
         ", Test accuracy: %.3f" % (test_acc * 100),
-        ", Total params: ",model.count_params(),
+        ", Total params: ",
+        model.count_params(),
     )
     # learning curves
     summarize_diagnostics(history)
