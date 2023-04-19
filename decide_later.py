@@ -82,8 +82,9 @@ def run_test_harness(blocks, data_aug):
         batch_size=64,
         target_size=(200, 200),
     )
+    dir="tb_callbacks/VGG"+str(blocks)+"_data_augmentation_"+str(data_aug)
+    tensorboard_callback = TensorBoard(log_dir=dir, histogram_freq=1)
     start = time()
-    tensorboard_callback = TensorBoard(log_dir="tb_callback_dir", histogram_freq=1)
     history = model.fit(
         train_it,
         steps_per_epoch=len(train_it),
@@ -104,14 +105,7 @@ def run_test_harness(blocks, data_aug):
         ", Test accuracy: %.3f" % (test_acc * 100),
         ", Total params: ",model.count_params()
     )
-    with file_writer.as_default():
-  # Don't forget to reshape.
-        images = np.reshape(test_it, (-1, 28, 28, 1))
-        summary.image("25 training data examples", images, max_outputs=25, step=0)
     summarize_diagnostics(history)
 
-
-blocks, data_aug = int(input("Enter the number of blocks: ")), int(
-    input("For data augmentation enter 1, else 0: ")
-)
-run_test_harness(blocks, data_aug)
+for mod in ((1,False),(2,False),(3,True)):
+    run_test_harness(mod[0],mod[1])

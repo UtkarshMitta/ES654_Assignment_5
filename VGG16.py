@@ -71,14 +71,15 @@ def run_test_harness():
         target_size=(224, 224),
     )
     # fit model
-    tensorboard_callback = TensorBoard(log_dir="VGG16_tb_callback_dir, histogram_freq=1)
+    dir="tb_callbacks/VGG16_transfer_learning"
+    tensorboard_callback = TensorBoard(log_dir=dir, histogram_freq=1)
     start = time()
     history = model.fit(
         train_it,
         steps_per_epoch=len(train_it),
         validation_data=test_it,
         validation_steps=len(test_it),
-        epochs=10,
+        epochs=20,
         callbacks=[tensorboard_callback],
         verbose=1,
     )
@@ -92,10 +93,10 @@ def run_test_harness():
         ", Test loss: %.3f" % test_loss,
         ", Training time(in s): %.3f" % (end - start),
         ", Train accuracy: %.3f" % (train_acc * 100),
-        ", Test accuracy: %.3f" % (test_acc * 100)
+        ", Test accuracy: %.3f" % (test_acc * 100),
+        ", Total params: ",model.count_params(),
     )
     # learning curves
-    model.summary()
     summarize_diagnostics(history)
 
 
