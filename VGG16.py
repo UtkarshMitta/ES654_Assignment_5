@@ -71,7 +71,7 @@ def run_test_harness():
         target_size=(224, 224),
     )
     # fit model
-    tensorboard_callback = TensorBoard(log_dir="VGG16_tb_callback_dir", histogram_freq=1)
+    tensorboard_callback = TensorBoard(log_dir="VGG16_tb_callback_dir, histogram_freq=1)
     start = time()
     history = model.fit(
         train_it,

@@ -7,6 +7,7 @@ from keras.optimizers import SGD
 from keras.preprocessing.image import ImageDataGenerator
 from time import time
 from keras.callbacks import TensorBoard
+from tensorflow import summary
 
 
 def define_model(blocks):
@@ -103,6 +104,10 @@ def run_test_harness(blocks, data_aug):
         ", Test accuracy: %.3f" % (test_acc * 100),
         ", Total params: ",model.count_params()
     )
+    with file_writer.as_default():
+  # Don't forget to reshape.
+        images = np.reshape(test_it, (-1, 28, 28, 1))
+        summary.image("25 training data examples", images, max_outputs=25, step=0)
     summarize_diagnostics(history)
 
 
